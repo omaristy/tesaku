@@ -1,2 +1,1 @@
-Taruh foto di sini dengan nama: foto1.jpg, foto2.jpg ... sampai foto9 (jpg/jpeg/png/webp).
-Disarankan lebar maksimal 1920 px agar cepat dimuat.
+taruh file di sini
