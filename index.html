@@ -155,13 +155,13 @@ body:has(#show.gmode) .orn{opacity:.18;transition:opacity 1s}
 <script src="efek.js"></script>
 <script src="suara.js"></script>
 <script>
-console.info("index build 2026.10.18-bersih2");
+console.info("index build 2026.10.18-siklus2");
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const SU=(window.CONFIG||{}).sheetUrl||"";
 const DEF={nama:"Sahabat",umur:"",dari:"Teman-temanmu",ucapan:["Selamat ulang tahun! 🎉","Semoga panjang umur, sehat selalu, dan bahagia setiap hari.","Terima kasih sudah menjadi bagian indah dalam hidup kami. ❤️"],
   teksMelingkar:"SELAMAT ULANG TAHUN ✦ HAPPY BIRTHDAY ✦ ",teksBerjalan:"Happy Birthday 🎂 Semoga semua impianmu terwujud 🎈 Bahagia selalu 🎁",
   tema:"black-gold",tombolTema:true,lingkaranFoto:true,posisiFoto:"kanan",latar:"video",foto:[1,2,3],video:1,videoSuara:false,lagu:[1],
-  konfeti:"meriah",ornamen:true,teksTeman:true,slideTeman:true,fotoTeman:true,segarkan:60};
+  konfeti:"meriah",ornamen:true,teksTeman:true,slideTeman:true,fotoTeman:true,segarkan:60,mediaFotoURL:"",mediaVideoURL:"",mediaLaguURL:""};
 let C=Object.assign({},DEF),T=TH[0],ITEMS=[],FOTO=[],ML=[],VID=null,imgs=[],si=0,fi=0,mi=0,applied=false;
 const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const okImg=u=>/^https:\/\/(drive\.google\.com|lh3\.googleusercontent\.com)\//.test(u);
@@ -207,7 +207,7 @@ function setupFoto(){clearInterval(fi);fr.querySelectorAll("img").forEach(e=>e.r
   fi=setInterval(()=>{if(imgs.length<2)return;imgs[si].classList.remove("on");si=(si+1)%imgs.length;imgs[si].classList.add("on");setBg(FOTO[si])},3500)}
 
 /* ---- teks berjalan ---- */
-function ribbon(){const g=C.teksTeman?guests().map(x=>`💌 ${x.nama}: ${cut(x.pesan,90)}`):[];
+function ribbon(){const g=(C.teksTeman&&(marq||!adaMusik()))?guests().map(x=>`💌 ${x.nama}: ${cut(x.pesan,90)}`):[];
   const t=[C.teksBerjalan,...g].filter(Boolean).join("   ✦   ")+"   ✦   ";
   $("run").textContent=t.repeat(2);$("run").style.animationDuration=Math.max(22,t.length*.2)+"s";
   document.querySelector(".run").style.display=(C.teksBerjalan||g.length)?"":"none"}
@@ -221,9 +221,19 @@ async function terapkan(){applied=true;
   $("rb").style.display=C.lingkaranFoto?"":"none";$("rb").classList.toggle("kiri",C.posisiFoto=="kiri");
   $("tema").style.display=C.tombolTema?"":"none";
   ribbon();
-  FOTO=(await Promise.all((C.foto||[]).map(n=>cari("foto",n)))).filter(Boolean);setupFoto();
-  ML=(await Promise.all((C.lagu||[]).map(n=>cari("lagu",n)))).filter(Boolean);mi=0;
-  VID=(C.latar=="video"&&C.video)?await cari("video",C.video):null}
+  /* URL Drive (bila terisi) dipakai menggantikan file lokal; bila kosong -> file di folder assets */
+  const driveOk=u=>/^https:\/\/drive\.google\.com\/(uc\?|file\/d\/)/.test(String(u||""));
+  const thumb=u=>{const id=Suara.driveId(u);return id?"https://drive.google.com/thumbnail?id="+encodeURIComponent(id)+"&sz=w2000":u};
+  const lomba=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),ms))]);
+  const lokal=async(j,arr)=>(await Promise.all((arr||[]).map(n=>cari(j,n)))).filter(Boolean);
+  if(driveOk(C.mediaFotoURL)){let f;try{f=await lomba(Suara.blobUrlBagi(C.mediaFotoURL),20000)}catch(e){console.warn("foto Drive gagal dimuat:",e&&e.message);f=thumb(C.mediaFotoURL)}FOTO=[f]}
+  else FOTO=await lokal("foto",C.foto);
+  setupFoto();
+  ML=driveOk(C.mediaLaguURL)?[C.mediaLaguURL]:await lokal("lagu",C.lagu);mi=0;
+  VID=null;ribbon();
+  if(C.latar=="video"){if(driveOk(C.mediaVideoURL))VID=C.mediaVideoURL;else if(C.video)VID=await cari("video",C.video)}
+  ML.forEach((u,i)=>{if(Suara.driveId(u))Suara.blobUrlBagi(u).then(bu=>{if(ML[i]===u)ML[i]=bu}).catch(e=>console.warn("musik Drive gagal dimuat:",e&&e.message))});
+  if(VID&&Suara.driveId(VID)){const v0=VID;Suara.blobUrlBagi(v0).then(bu=>{if(VID===v0)VID=bu}).catch(e=>console.warn("video Drive gagal dimuat:",e&&e.message))}}
 
 async function boot(){
   let cache=null;try{cache=JSON.parse(localStorage.getItem("cfg"))}catch(e){}
@@ -238,8 +248,23 @@ async function boot(){
   if(SU)setInterval(()=>api("action=list").then(d=>{if(d&&d.ok){ITEMS=d.items.map(norm);ribbon();prefetch()}}).catch(()=>{}),Math.max(15,+C.segarkan||60)*1000)}
 
 /* ---- musik ---- */
-const au=$("au"),load=()=>{au.src=ML[mi]};
-$("lagu").onclick=()=>{mi=(mi+1)%ML.length;load();au.play().catch(()=>{});laguMulai()};
+/* ---- siklus lagu: ucapan teman tampil sekali per lagu (tiap lagu mulai dari awal = satu putaran baru) ---- */
+let cycle=0,musikGagal=false,marq=false,marqT=0;
+const adaMusik=()=>ML.length>0&&!musikGagal;
+/* lagu mulai dari awal: hitung putaran baru + tampilkan ucapan teman di teks berjalan SEKALI (satu kali gulir) */
+function songStart(){cycle++;console.info("[teman] lagu mulai dari awal -> putaran "+cycle);
+  if(!C.teksTeman)return;marq=true;ribbon();clearTimeout(marqT);
+  const dur=parseFloat($("run").style.animationDuration)||22;
+  marqT=setTimeout(()=>{marq=false;ribbon()},dur*1000+500)}
+const au=$("au");let auFb="";
+{let lastT=0,pendStart=false;
+ au.addEventListener("loadstart",()=>{pendStart=true;lastT=0});
+ au.addEventListener("playing",()=>{if(pendStart){pendStart=false;songStart()}});           /* lagu pertama / pindah lagu */
+ au.addEventListener("timeupdate",()=>{const t=au.currentTime;if(t+1.5<lastT)songStart();lastT=t})}  /* lagu yang diulang dari awal */
+const load=()=>{auFb="";au.src=ML[mi]};
+au.addEventListener("error",async()=>{const u=ML[mi];if(!Suara.driveId(u)||auFb===u)return;auFb=u;
+  try{const b=await Suara.blobUrlBagi(u);au.src=b;au.play().catch(()=>{})}catch(e){console.warn("musik Drive gagal:",e&&e.message)}});
+$("lagu").onclick=()=>{mi=(mi+1)%ML.length;load();au.play().catch(()=>{})};
 $("mute").onclick=()=>{au.muted=!au.muted;$("mute").textContent=au.muted?"🔇":"🔊"};
 
 /* ---- mesin suara ucapan ---- */
@@ -279,24 +304,26 @@ let pfChain=Promise.resolve(),pfDone=new Set();
 function prefetch(){ITEMS.filter(x=>x.suara).slice(-14).forEach(x=>{if(pfDone.has(x.suara))return;pfDone.add(x.suara);
   pfChain=pfChain.then(()=>Suara.ambil(x.suara)).catch(()=>{pfDone.delete(x.suara)})})}
 
-/* ---- giliran ucapan teman: tiap teman tampil SEKALI per putaran lagu ----
-   - saat lagu mulai dari awal (atau ganti lagu) dan semua ucapan putaran sebelumnya sudah selesai -> putaran baru
-   - jika ucapan masih antre saat lagu sudah habis, antrean diselesaikan dulu; putaran baru baru dimulai
-     pada lagu berikutnya (menunggu lagu habis lagi) */
-const served=new Set(),gkey=x=>x.nama+"|"+x.pesan+"|"+x.suara;
-const pending=()=>(C.slideTeman?guests():[]).filter(x=>!served.has(gkey(x)));
-function laguMulai(){if(!pending().length)served.clear()}
-
 /* ---- ucapan otomatis (ucapan utama + ucapan teman) ---- */
 function chip(state,txt,fn){const c=$("vchip");if(!c)return;c.dataset.s=state;$("vtxt").textContent=txt;c.onclick=fn||null;
   if(c.tagName==="BUTTON")c.disabled=!fn;setVS(state)}
 async function scenes(){
   const L=[`Selamat Ulang Tahun, ${C.nama}! 🎂`,...(C.ucapan||[])];if(C.dari)L.push(`Dengan cinta, ${C.dari} 💝`);
   const el=$("line");let li=0,gi=0,g=false;
+  /* Antrean teman: satu putaran = semua teman tampil sekali. Putaran baru HANYA dimulai saat lagu mulai dari awal;
+     bila lagu sudah selesai/berulang sebelum semua teman tampil, sisa teman dihabiskan dulu, baru menunggu lagu mulai lagi. */
+  let Q=[],pasAktif=false,cs=0,fb=false;const t00=Date.now(),adaLagu=()=>ML.length>0&&!musikGagal;
+  const mulaiPass=gs=>{
+    if(Q.length||!gs.length)return;
+    if(pasAktif){pasAktif=false;cs=cycle;console.info("[teman] putaran slide selesai; tunggu lagu mulai dari awal")}                 /* putaran sebelumnya tuntas */
+    let boleh=!adaLagu()||cycle>cs;                       /* tanpa musik: berputar terus */
+    if(!boleh&&!cycle&&!fb&&Date.now()-t00>10000){fb=true;boleh=true}  /* lagu tak kunjung mulai: jangan kosong */
+    if(boleh){Q=gs.slice();pasAktif=true;console.info("[teman] putaran slide dimulai: "+Q.length+" ucapan")}};
   while(1){
-    const an=ANIM[T.a][(li+gi)%3],gs=pending();
-    if(g&&gs.length){
-      const x=gs[0];served.add(gkey(x));gi++;const m=cut(x.pesan,260).split(" ");
+    const an=ANIM[T.a][(li+gi)%3],gs=C.slideTeman?guests():[];
+    mulaiPass(gs);
+    if(g&&Q.length){
+      const x=Q.shift();gi++;const m=cut(x.pesan,260).split(" ");
       el.className="line";$("show").classList.add("gmode");
       el.innerHTML=`<div class="gst">${x.foto?`<div class="gf"><img src="${esc(x.foto)}" alt="" onerror="this.parentNode.className='gf med';this.outerHTML='💌'"></div>`:`<div class="gf med">💌</div>`}<div class="gb"><b class="gn"><span>✦ ${esc(x.nama)} ✦</span>${x.hubungan?`<small>${esc(x.hubungan)}</small>`:""}</b>${x.suara?`<button class="vchip" id="vchip" data-s="loading" type="button" disabled><span class="eq"><i></i><i></i><i></i><i></i></span><span id="vtxt">Memuat suara…</span></button>`:""}<hr class="gl"><div class="gmsg">${m.map((w,k)=>`<span class="w" style="animation-name:${an};animation-delay:${k*.12+.7}s">${esc(w)}</span>`).join("")}</div></div></div>`;
       const slideWait=m.length*120+1700+Math.max(4500,m.length*240),t0=Date.now(),abort={v:false};
@@ -325,13 +352,14 @@ $("buka").onclick=()=>{
   const sl=$("slot");if(sl)sl.replaceWith($("rb"));
   const sh=$("show");sh.style.display="block";requestAnimationFrame(()=>sh.classList.add("on"));
   const v=$("bg"),vb=$("bgb"),photo=()=>{v.style.display=vb.style.display="none";if(FOTO.length)$("kb").style.display=$("kbb").style.display="block"};
-  if(VID){v.src=vb.src=VID;v.muted=!C.videoSuara;vb.muted=true;v.style.display=vb.style.display="block";
-    v.onerror=photo;v.play().catch(()=>{});vb.play().catch(()=>{})}
+  if(VID){
+    const mulai=src=>{v.src=vb.src=src;v.muted=!C.videoSuara;vb.muted=true;v.style.display=vb.style.display="block";$("kb").style.display=$("kbb").style.display="none";
+      v.onerror=()=>{console.warn("video tidak bisa diputar (format/codec?)");photo()};v.play().catch(()=>{});vb.play().catch(()=>{})};
+    if(Suara.driveId(VID)){photo();Suara.blobUrlBagi(VID).then(bu=>{VID=bu;mulai(bu)}).catch(e=>console.warn("video Drive gagal dimuat:",e&&e.message))}
+    else mulai(VID)}
   else if(C.latar!="polos")photo();
-  if(!ML.length)setInterval(laguMulai,120000); // tanpa lagu: anggap satu putaran = 2 menit
-  if(ML.length){mi=0;au.loop=false;
-    au.onended=()=>{if(ML.length>1){mi=(mi+1)%ML.length;load()}else au.currentTime=0;au.play().catch(()=>{});laguMulai()};
-    load();baseVol=VID&&C.videoSuara?.25:1;au.volume=baseVol;au.play().catch(()=>{});
+  if(ML.length){mi=0;au.loop=ML.length<2;au.onended=()=>{mi=(mi+1)%ML.length;load();au.play().catch(()=>{})};
+    load();baseVol=VID&&C.videoSuara?.25:1;au.volume=baseVol;au.play().catch(()=>{musikGagal=true});
     $("mute").style.display="inline-block";$("lagu").style.display=ML.length>1?"inline-block":"none"}
   setTimeout(scenes,1200);auto()};
 

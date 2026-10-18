@@ -74,3 +74,16 @@ B. UNGGAH KE GOOGLE DRIVE dari admin > Media (foto otomatis diperkecil). URL Dri
    - Video: pastikan Latar = Video. Format paling aman MP4 (H.264 + AAC); admin memberi peringatan bila browser tidak bisa memutarnya.
    - WAJIB: salin Code.gs terbaru ke Apps Script lalu Deploy -> Manage deployments -> Edit -> Version: New version -> Deploy.
      Klik "🩺 Tes koneksi & versi Code.gs" di admin: harus tertulis versi 2026.10.18-lengkap.
+
+UCAPAN TEMAN: SEKALI PER LAGU (build 2026.10.18-siklus)
+- Setiap lagu mulai dari awal (lagu pertama, lagu berikutnya, atau lagu yang berulang) memulai satu putaran: tiap ucapan teman tampil SEKALI.
+- Jika temannya banyak dan lagu sudah selesai/berulang sebelum semuanya tampil, sisa ucapan teman dihabiskan dulu sampai tuntas.
+  Setelah itu hanya ucapan utama yang tampil, sampai lagu mulai dari awal lagi, baru ucapan teman muncul lagi.
+- Ucapan teman yang masuk di tengah putaran tampil pada putaran berikutnya.
+- Tanpa musik (atau musik gagal diputar), ucapan teman berputar terus seperti biasa.
+
+UCAPAN TEMAN DI TEKS BERJALAN (build 2026.10.18-siklus2)
+- Ucapan teman di teks berjalan (bagian bawah layar) juga mengikuti lagu: muncul SEKALI (satu kali gulir) setiap lagu mulai dari awal,
+  lalu hilang sampai lagu mulai dari awal lagi. Teks berjalan utama tetap tampil terus.
+- Ingin menonaktifkan salah satunya? Admin > Teman: "Tampil sebagai slide" dan "Tampil di teks berjalan".
+- Cek di halaman utama: F12 > Console menampilkan "[teman] lagu mulai dari awal -> putaran N" dan "[teman] putaran slide dimulai/selesai".

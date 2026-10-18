@@ -1,1 +1,2 @@
-taruh file di sini
+Taruh musik di sini dengan nama: lagu1.mp3, lagu2.mp3 ... sampai lagu9 (mp3/m4a/ogg/wav).
+Di admin, centang nomor lagu yang dipakai.
