@@ -155,7 +155,7 @@ body:has(#show.gmode) .orn{opacity:.18;transition:opacity 1s}
 <script src="efek.js"></script>
 <script src="suara.js"></script>
 <script>
-console.info("index build 2026.10.18-lengkap");
+console.info("index build 2026.10.18-siklus");
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const SU=(window.CONFIG||{}).sheetUrl||"";
 const DEF={nama:"Sahabat",umur:"",dari:"Teman-temanmu",ucapan:["Selamat ulang tahun! 🎉","Semoga panjang umur, sehat selalu, dan bahagia setiap hari.","Terima kasih sudah menjadi bagian indah dalam hidup kami. ❤️"],
@@ -248,7 +248,13 @@ async function boot(){
   if(SU)setInterval(()=>api("action=list").then(d=>{if(d&&d.ok){ITEMS=d.items.map(norm);ribbon();prefetch()}}).catch(()=>{}),Math.max(15,+C.segarkan||60)*1000)}
 
 /* ---- musik ---- */
+/* ---- siklus lagu: ucapan teman tampil sekali per lagu (tiap lagu mulai dari awal = satu putaran baru) ---- */
+let cycle=0,musikGagal=false;
 const au=$("au");let auFb="";
+{let lastT=0,pendStart=false;
+ au.addEventListener("loadstart",()=>{pendStart=true;lastT=0});
+ au.addEventListener("playing",()=>{if(pendStart){pendStart=false;cycle++}});           /* lagu pertama / pindah lagu */
+ au.addEventListener("timeupdate",()=>{const t=au.currentTime;if(t+1.5<lastT)cycle++;lastT=t})}  /* lagu yang diulang dari awal */
 const load=()=>{auFb="";au.src=ML[mi]};
 au.addEventListener("error",async()=>{const u=ML[mi];if(!Suara.driveId(u)||auFb===u)return;auFb=u;
   try{const b=await Suara.blobUrlBagi(u);au.src=b;au.play().catch(()=>{})}catch(e){console.warn("musik Drive gagal:",e&&e.message)}});
@@ -298,10 +304,20 @@ function chip(state,txt,fn){const c=$("vchip");if(!c)return;c.dataset.s=state;$(
 async function scenes(){
   const L=[`Selamat Ulang Tahun, ${C.nama}! 🎂`,...(C.ucapan||[])];if(C.dari)L.push(`Dengan cinta, ${C.dari} 💝`);
   const el=$("line");let li=0,gi=0,g=false;
+  /* Antrean teman: satu putaran = semua teman tampil sekali. Putaran baru HANYA dimulai saat lagu mulai dari awal;
+     bila lagu sudah selesai/berulang sebelum semua teman tampil, sisa teman dihabiskan dulu, baru menunggu lagu mulai lagi. */
+  let Q=[],pasAktif=false,cs=0,fb=false;const t00=Date.now(),adaLagu=()=>ML.length>0&&!musikGagal;
+  const mulaiPass=gs=>{
+    if(Q.length||!gs.length)return;
+    if(pasAktif){pasAktif=false;cs=cycle}                 /* putaran sebelumnya tuntas */
+    let boleh=!adaLagu()||cycle>cs;                       /* tanpa musik: berputar terus */
+    if(!boleh&&!cycle&&!fb&&Date.now()-t00>10000){fb=true;boleh=true}  /* lagu tak kunjung mulai: jangan kosong */
+    if(boleh){Q=gs.slice();pasAktif=true}};
   while(1){
     const an=ANIM[T.a][(li+gi)%3],gs=C.slideTeman?guests():[];
-    if(g&&gs.length){
-      const x=gs[gi++%gs.length],m=cut(x.pesan,260).split(" ");
+    mulaiPass(gs);
+    if(g&&Q.length){
+      const x=Q.shift();gi++;const m=cut(x.pesan,260).split(" ");
       el.className="line";$("show").classList.add("gmode");
       el.innerHTML=`<div class="gst">${x.foto?`<div class="gf"><img src="${esc(x.foto)}" alt="" onerror="this.parentNode.className='gf med';this.outerHTML='💌'"></div>`:`<div class="gf med">💌</div>`}<div class="gb"><b class="gn"><span>✦ ${esc(x.nama)} ✦</span>${x.hubungan?`<small>${esc(x.hubungan)}</small>`:""}</b>${x.suara?`<button class="vchip" id="vchip" data-s="loading" type="button" disabled><span class="eq"><i></i><i></i><i></i><i></i></span><span id="vtxt">Memuat suara…</span></button>`:""}<hr class="gl"><div class="gmsg">${m.map((w,k)=>`<span class="w" style="animation-name:${an};animation-delay:${k*.12+.7}s">${esc(w)}</span>`).join("")}</div></div></div>`;
       const slideWait=m.length*120+1700+Math.max(4500,m.length*240),t0=Date.now(),abort={v:false};
@@ -337,7 +353,7 @@ $("buka").onclick=()=>{
     else mulai(VID)}
   else if(C.latar!="polos")photo();
   if(ML.length){mi=0;au.loop=ML.length<2;au.onended=()=>{mi=(mi+1)%ML.length;load();au.play().catch(()=>{})};
-    load();baseVol=VID&&C.videoSuara?.25:1;au.volume=baseVol;au.play().catch(()=>{});
+    load();baseVol=VID&&C.videoSuara?.25:1;au.volume=baseVol;au.play().catch(()=>{musikGagal=true});
     $("mute").style.display="inline-block";$("lagu").style.display=ML.length>1?"inline-block":"none"}
   setTimeout(scenes,1200);auto()};
 
