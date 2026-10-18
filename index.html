@@ -101,6 +101,28 @@ button.vchip{cursor:pointer}
 body:has(#show.gmode) .orn{opacity:.18;transition:opacity 1s}
 .gl{width:min(60vw,260px);height:2px;border:0;background:linear-gradient(90deg,transparent,var(--ac),transparent)}
 .gmsg{font-size:clamp(17px,4.5vw,30px);line-height:1.45;display:flex;flex-wrap:wrap;justify-content:inherit;gap:.05em .3em;font-weight:var(--fw)}
+
+/* ===== slide teman: responsif HP & PC ===== */
+#show.gmode .stage{justify-content:center;padding-top:48px}
+#show.gmode .line{max-width:none;width:100%;min-height:0}
+.gst{--fh:30vh;width:100%;max-width:min(94vw,1280px);margin-inline:auto;gap:clamp(12px,2.4vh,22px)}
+.gf img{max-width:min(64vw,330px);max-height:var(--fh)}
+.gb{width:100%;max-width:min(92vw,640px);padding:20px 20px 22px;gap:clamp(6px,1.4vh,12px)}
+.gn{font-size:clamp(24px,7vw,38px)}
+.gn span{text-wrap:balance}
+@media (max-aspect-ratio:1/1){.gmsg.ctr{justify-content:center;text-align:center}}
+.gmsg{font-size:clamp(16px,4.6vw,28px);line-height:1.5;max-width:100%;text-wrap:pretty;overflow-wrap:anywhere}
+#show.gmode .ringbox{opacity:0;transition:opacity .5s}
+body:has(#show.gmode) canvas#cf{z-index:2}  /* saat slide teman: konfeti di belakang kartu agar tulisan tetap jelas */
+@media (min-aspect-ratio:1/1){
+  .gst{--fh:64vh;gap:clamp(24px,3.2vw,56px);justify-content:center;align-items:center}
+  .gf img{max-width:min(36vw,560px);max-height:var(--fh)}
+  .gf.med{width:clamp(120px,14vw,220px);font-size:clamp(60px,7vw,110px)}
+  .gb{width:auto;flex:0 1 auto;max-width:min(54vw,860px);min-width:min(40vw,360px);padding:26px 34px 30px}
+  .gn{font-size:clamp(28px,3.4vw,58px)}
+  .gmsg{font-size:clamp(18px,1.9vw,34px)}
+}
+@media (max-height:480px) and (min-aspect-ratio:1/1){.gb{padding:14px 22px}.gf img{max-height:58vh}}
 .tp{position:fixed;top:54px;left:10px;right:10px;max-width:480px;max-height:68vh;overflow:auto;z-index:7;display:none;padding:12px;border-radius:18px;border:1px solid var(--ac);background:color-mix(in srgb,var(--b1) 94%,transparent);backdrop-filter:blur(14px)}
 .tp.open{display:block}
 .tp h4{color:var(--ac);font:500 12px Poppins;letter-spacing:2px;text-transform:uppercase;margin:12px 4px 4px}
@@ -155,7 +177,7 @@ body:has(#show.gmode) .orn{opacity:.18;transition:opacity 1s}
 <script src="efek.js"></script>
 <script src="suara.js"></script>
 <script>
-console.info("index build 2026.10.18-siklus2");
+console.info("index build 2026.10.18-teman4");
 const $=id=>document.getElementById(id),q=new URLSearchParams(location.search),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const SU=(window.CONFIG||{}).sheetUrl||"";
 const DEF={nama:"Sahabat",umur:"",dari:"Teman-temanmu",ucapan:["Selamat ulang tahun! 🎉","Semoga panjang umur, sehat selalu, dan bahagia setiap hari.","Terima kasih sudah menjadi bagian indah dalam hidup kami. ❤️"],
@@ -248,6 +270,22 @@ async function boot(){
   if(SU)setInterval(()=>api("action=list").then(d=>{if(d&&d.ok){ITEMS=d.items.map(norm);ribbon();prefetch()}}).catch(()=>{}),Math.max(15,+C.segarkan||60)*1000)}
 
 /* ---- musik ---- */
+/* menyesuaikan ukuran huruf/foto agar kartu teman selalu muat di layar (HP maupun PC) */
+function fitGuest(){
+  const box=document.querySelector("#line .gst");if(!box)return;
+  const msg=box.querySelector(".gmsg");if(!msg)return;
+  const W=innerWidth,H=innerHeight,land=W/H>=1,avail=H-(W<700?140:120);
+  const n=(msg.textContent||"").length;
+  let fs=land?Math.max(18,Math.min(40,W*.024)):Math.max(17,Math.min(30,W*.062));
+  fs*=n<=60?1.2:n<=140?1.05:n<=260?.9:.8;
+  let fh=land?64:30;
+  msg.style.fontSize=fs.toFixed(1)+"px";box.style.setProperty("--fh",fh+"vh");
+  for(let k=0;k<80&&box.offsetHeight>avail;k++){
+    if(fs>14){fs-=1;msg.style.fontSize=fs+"px"}
+    else if(fh>14){fh-=2;box.style.setProperty("--fh",fh+"vh")}
+    else break}}
+addEventListener("resize",()=>fitGuest());
+
 /* ---- siklus lagu: ucapan teman tampil sekali per lagu (tiap lagu mulai dari awal = satu putaran baru) ---- */
 let cycle=0,musikGagal=false,marq=false,marqT=0;
 const adaMusik=()=>ML.length>0&&!musikGagal;
@@ -323,10 +361,12 @@ async function scenes(){
     const an=ANIM[T.a][(li+gi)%3],gs=C.slideTeman?guests():[];
     mulaiPass(gs);
     if(g&&Q.length){
-      const x=Q.shift();gi++;const m=cut(x.pesan,260).split(" ");
+      const x=Q.shift();gi++;const pesan=cut(x.pesan,500),m=pesan.split(" "),stp=Math.min(.12,4/Math.max(1,m.length));
       el.className="line";$("show").classList.add("gmode");
-      el.innerHTML=`<div class="gst">${x.foto?`<div class="gf"><img src="${esc(x.foto)}" alt="" onerror="this.parentNode.className='gf med';this.outerHTML='💌'"></div>`:`<div class="gf med">💌</div>`}<div class="gb"><b class="gn"><span>✦ ${esc(x.nama)} ✦</span>${x.hubungan?`<small>${esc(x.hubungan)}</small>`:""}</b>${x.suara?`<button class="vchip" id="vchip" data-s="loading" type="button" disabled><span class="eq"><i></i><i></i><i></i><i></i></span><span id="vtxt">Memuat suara…</span></button>`:""}<hr class="gl"><div class="gmsg">${m.map((w,k)=>`<span class="w" style="animation-name:${an};animation-delay:${k*.12+.7}s">${esc(w)}</span>`).join("")}</div></div></div>`;
-      const slideWait=m.length*120+1700+Math.max(4500,m.length*240),t0=Date.now(),abort={v:false};
+      el.innerHTML=`<div class="gst">${x.foto?`<div class="gf"><img src="${esc(x.foto)}" alt="" onerror="this.parentNode.className='gf med';this.outerHTML='💌'"></div>`:`<div class="gf med">💌</div>`}<div class="gb"><b class="gn"><span>✦ ${esc(x.nama)} ✦</span>${x.hubungan?`<small>${esc(x.hubungan)}</small>`:""}</b>${x.suara?`<button class="vchip" id="vchip" data-s="loading" type="button" disabled><span class="eq"><i></i><i></i><i></i><i></i></span><span id="vtxt">Memuat suara…</span></button>`:""}<hr class="gl"><div class="gmsg${pesan.length<=160?' ctr':''}">${m.map((w,k)=>`<span class="w" style="animation-name:${an};animation-delay:${(k*stp+.7).toFixed(2)}s">${esc(w)}</span>`).join("")}</div></div></div>`;
+      fitGuest();setTimeout(fitGuest,400);
+      /* lama tampil mengikuti panjang kalimat (tanpa suara); dengan rekaman suara: sampai rekaman selesai */
+      const slideWait=Math.max(5000,Math.min(24000,3500+pesan.length*70),(.7+m.length*stp+.9)*1000+2200),t0=Date.now(),abort={v:false};
       if(x.suara){
         const jalan=async manual=>{ // manual = diketuk pengguna
           chip("loading","Memuat suara…");
@@ -334,7 +374,7 @@ async function scenes(){
             v.done.then(()=>{if(!abort.v){chip("done","Suara selesai");duck(false)}});return v}
           catch(e){console.warn("Suara tidak bisa diputar:",e);chip("fail","Ketuk untuk memutar suara 🔊",()=>jalan(true));duck(false);return null}};
         const v=await Promise.race([jalan(false),wait(20000).then(()=>"timeout")]);
-        if(v&&v!=="timeout")await Promise.all([wait(Math.max(0,slideWait-(Date.now()-t0))),Promise.race([v.done,wait(80000)])]);
+        if(v&&v!=="timeout"){await Promise.race([v.done,wait(80000)]);await wait(1500);const sisa=3500-(Date.now()-t0);if(sisa>0)await wait(sisa)}
         else await wait(Math.max(slideWait-(Date.now()-t0),3500)+(v==="timeout"?0:3000));
         abort.v=true;stopVoice();duck(false);setVS("")
       }else await wait(slideWait);
