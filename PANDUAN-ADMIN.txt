@@ -87,3 +87,18 @@ UCAPAN TEMAN DI TEKS BERJALAN (build 2026.10.18-siklus2)
   lalu hilang sampai lagu mulai dari awal lagi. Teks berjalan utama tetap tampil terus.
 - Ingin menonaktifkan salah satunya? Admin > Teman: "Tampil sebagai slide" dan "Tampil di teks berjalan".
 - Cek di halaman utama: F12 > Console menampilkan "[teman] lagu mulai dari awal -> putaran N" dan "[teman] putaran slide dimulai/selesai".
+
+SLIDE UCAPAN TEMAN (build 2026.10.18-teman4)
+- Tampil SEKALI per putaran lagu. Lama tampil mengikuti panjang kalimat (sekitar 5-24 detik); pesan ditampilkan utuh sampai 500 karakter.
+- Jika ada rekaman suara: slide bertahan sampai rekaman selesai (+ jeda sebentar), bukan mengikuti panjang kalimat.
+- Tampilan menyesuaikan layar: HP (foto di atas, kartu di bawah), tablet, dan PC/layar lebar (foto di kiri, kartu di kanan).
+  Ukuran huruf & foto otomatis disesuaikan agar selalu muat tanpa terpotong. Konfeti dipindah ke belakang kartu agar tulisan jelas.
+
+UCAPAN TEMAN HANYA SEKALI + TOMBOL WHATSAPP (build 2026.10.19)
+- Ucapan yang dikirim teman lewat kirim.html: tiap ucapan tampil SEKALI SAJA (slide dan teks berjalan), selama halaman dibuka.
+  Ucapan baru yang masuk saat halaman terbuka juga tampil sekali. Muat ulang halaman = putaran baru dari awal.
+- Ucapan yang diketik di admin (ucapan utama, ucapan penutup, teks berjalan) tetap berputar terus.
+- Tombol WhatsApp: admin > WA. Isi nomor (08xx atau 628xx), tulisan tombol, dan pesan awal ({nama} = nama yang berulang tahun).
+  Tombol "💬 Chat" ada di bar atas; kartu "Ingin kirim pesan? Chat ke nomor ini" ada di sampul dan di halaman kirim ucapan.
+  WAJIB deploy ulang Code.gs terbaru (versi 2026.10.19-wa) agar pengaturan WA tersimpan.
+  Alternatif tanpa deploy: isi  waNomor: "08xxxxxxxxxx"  di config.js.

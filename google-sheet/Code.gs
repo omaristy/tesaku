@@ -4,7 +4,7 @@
 // >>> WAJIB GANTI sandi ini, lalu Deploy. Sandi dipakai untuk masuk ke admin.html <<<
 const SANDI_ADMIN = "1111";
 
-const VERSI = "2026.10.18-lengkap";
+const VERSI = "2026.10.19-wa";
 const NAMA_SHEET = "Ucapan", SHEET_SET = "Pengaturan", NAMA_FOLDER = "Foto Ucapan Ulang Tahun";
 
 function ss_() { return SpreadsheetApp.getActiveSpreadsheet(); }
@@ -64,7 +64,8 @@ function bersih_(p) {
     konfeti: ["meriah", "ringan", "mati"].indexOf(p.konfeti) >= 0 ? p.konfeti : "meriah", ornamen: b(p.ornamen),
     teksTeman: b(p.teksTeman), slideTeman: b(p.slideTeman), fotoTeman: b(p.fotoTeman),
     moderasi: b(p.moderasi), izinFoto: b(p.izinFoto), segarkan: Math.max(15, Math.min(600, +p.segarkan || 60)),
-    mediaFotoURL: mediaUrl_(p.mediaFotoURL), mediaVideoURL: mediaUrl_(p.mediaVideoURL), mediaLaguURL: mediaUrl_(p.mediaLaguURL)
+    mediaFotoURL: mediaUrl_(p.mediaFotoURL), mediaVideoURL: mediaUrl_(p.mediaVideoURL), mediaLaguURL: mediaUrl_(p.mediaLaguURL),
+    waNomor: String(p.waNomor || "").replace(/\D/g, "").slice(0, 15), waTeks: s(p.waTeks, 80), waPesan: s(p.waPesan, 300), waTampil: b(p.waTampil)
   };
 }
 

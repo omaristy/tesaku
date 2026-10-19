@@ -84,7 +84,7 @@ button:disabled{opacity:.55;cursor:wait}
 
   <!-- PANEL -->
   <div id="panel" hidden>
-    <div class="nav"><a href="#s-umum">👤 Umum</a><a href="#s-tulis">✍️ Tulisan</a><a href="#s-tampil">🎨 Tampilan</a><a href="#s-media">📁 Media</a><a href="#s-teman">💌 Teman</a><a href="#s-daftar">📋 Daftar</a></div>
+    <div class="nav"><a href="#s-umum">👤 Umum</a><a href="#s-tulis">✍️ Tulisan</a><a href="#s-tampil">🎨 Tampilan</a><a href="#s-media">📁 Media</a><a href="#s-teman">💌 Teman</a><a href="#s-wa">💬 WA</a><a href="#s-daftar">📋 Daftar</a></div>
     <div class="stats"><div><b id="stT">–</b><span>UCAPAN</span></div><div><b id="stV">–</b><span>DENGAN SUARA</span></div><div><b id="stS">–</b><span>TAMPIL</span></div></div>
     <div class="cd" id="s-umum"><h2>👤 Umum</h2>
       <div class="row"><div><label>Nama yang berulang tahun</label><input type="text" id="nama" maxlength="60"></div>
@@ -128,7 +128,7 @@ button:disabled{opacity:.55;cursor:wait}
       <div class="pgs" id="pgs" hidden><i></i></div>
       <label>URL musik Drive yang dipakai</label><div class="urow"><input type="text" id="mediaLaguURL" placeholder="Otomatis terisi setelah upload"><button type="button" data-hapus="mediaLaguURL">✖ Hapus URL</button></div>
       <label>Lagu lokal (jika URL Drive kosong)</label><div class="g" id="lagu"></div>
-      <p class="sm" style="opacity:.6">admin.html build 2026.10.18-lengkap</p>
+      <p class="sm" style="opacity:.6">admin.html build 2026.10.19-wa</p>
     </div>
 
     <div class="cd" id="s-teman"><h2>💌 Ucapan dari teman</h2>
@@ -139,6 +139,14 @@ button:disabled{opacity:.55;cursor:wait}
       <div class="sw"><span>Izinkan teman mengirim foto di formulir</span><input type="checkbox" id="izinFoto"></div>
       <div class="sw"><span>Moderasi: ucapan baru tampil setelah saya setujui</span><input type="checkbox" id="moderasi"></div>
       <label>Cek ucapan baru tiap … detik (di halaman penerima)</label><input type="number" id="segarkan" min="15" max="600">
+    </div>
+
+    <div class="cd" id="s-wa"><h2>💬 Tombol WhatsApp</h2>
+      <p class="sm">Tombol hijau "Chat" muncul di halaman kejutan (bar atas + kartu di sampul) dan di halaman kirim ucapan. Saat diklik, WhatsApp terbuka ke nomor ini dengan pesan awal yang sudah terisi.</p>
+      <div class="sw"><span>Tampilkan tombol WhatsApp</span><input type="checkbox" id="waTampil"></div>
+      <label>Nomor WhatsApp (contoh 08123456789 atau 628123456789)</label><input type="text" id="waNomor" maxlength="20" inputmode="tel" placeholder="08123456789">
+      <label>Tulisan di tombol / kartu</label><input type="text" id="waTeks" maxlength="80">
+      <label>Pesan awal di chat (<b>{nama}</b> = nama yang berulang tahun)</label><input type="text" id="waPesan" maxlength="300">
     </div>
 
     <div class="cd" id="s-daftar"><h2>📋 Daftar ucapan teman</h2>
@@ -163,7 +171,7 @@ const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const okImg=u=>/^https:\/\/(drive\.google\.com|lh3\.googleusercontent\.com)\//.test(u);
 const DEF={nama:"Sahabat",umur:"",dari:"Teman-temanmu",ucapan:["Selamat ulang tahun! 🎉","Semoga panjang umur, sehat selalu, dan bahagia setiap hari."],teksMelingkar:"SELAMAT ULANG TAHUN ✦ HAPPY BIRTHDAY ✦ ",teksBerjalan:"Happy Birthday 🎂 Semoga semua impianmu terwujud 🎈",
   tema:"black-gold",tombolTema:true,lingkaranFoto:true,posisiFoto:"kanan",latar:"video",foto:[1,2,3],video:1,videoSuara:false,lagu:[1],
-  konfeti:"meriah",ornamen:true,teksTeman:true,slideTeman:true,fotoTeman:true,moderasi:false,izinFoto:true,segarkan:60,mediaFotoURL:"",mediaVideoURL:"",mediaLaguURL:""};
+  konfeti:"meriah",ornamen:true,teksTeman:true,slideTeman:true,fotoTeman:true,moderasi:false,izinFoto:true,segarkan:60,mediaFotoURL:"",mediaVideoURL:"",mediaLaguURL:"",waNomor:"",waTeks:"Ingin kirim pesan? Chat ke nomor ini",waPesan:"Halo, saya ingin mengirim pesan untuk {nama}.",waTampil:true};
 let SANDI=sessionStorage.getItem("sandi")||"";
 async function post(o){const r=await fetch(SU,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({sandi:SANDI},o))});return r.json()}
 const msg=(t,c)=>{$("msg").textContent=t;$("msg").className=c||""};
@@ -183,8 +191,8 @@ function buatGrid(j,jenis,label){const el=$(j);el.innerHTML="";
 buatGrid("foto","checkbox","Foto");buatGrid("video","radio","Video");buatGrid("lagu","checkbox","Lagu");
 
 /* isi & ambil form */
-const BOOL=["tombolTema","lingkaranFoto","ornamen","videoSuara","slideTeman","teksTeman","fotoTeman","izinFoto","moderasi"];
-const TXT=["nama","umur","dari","teksMelingkar","teksBerjalan","tema","latar","konfeti","posisiFoto","segarkan","mediaFotoURL","mediaVideoURL","mediaLaguURL"];
+const BOOL=["tombolTema","lingkaranFoto","ornamen","videoSuara","slideTeman","teksTeman","fotoTeman","izinFoto","moderasi","waTampil"];
+const TXT=["nama","umur","dari","teksMelingkar","teksBerjalan","tema","latar","konfeti","posisiFoto","segarkan","mediaFotoURL","mediaVideoURL","mediaLaguURL","waNomor","waTeks","waPesan"];
 function isi(p){p=Object.assign({},DEF,p);
   TXT.forEach(k=>{if(k!="tema")$(k).value=p[k]});
   $("tema").value=p.tema=="acak"?"acak":slug(TH[cariTema(p.tema)].n);
@@ -239,7 +247,7 @@ $("cek").onclick=async()=>{const o=$("cekHasil");o.className="sm";o.textContent=
   catch(e){o.className="er";o.innerHTML="❌ Browser tidak bisa menjangkau Apps Script. Penyebab paling umum: Deploy bukan <b>Who has access: Anyone</b> (bukan 'Anyone with Google account'), atau alamat <b>sheetUrl</b> di config.js salah/bukan yang berakhiran /exec.";return}
   let d=null;try{d=JSON.parse(txt)}catch(e){}
   if(!d){o.className="er";o.textContent="❌ Balasan bukan JSON (HTTP "+r.status+"): "+txt.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,200);return}
-  if(!d.versi||!/lengkap/.test(d.versi)){o.className="er";o.innerHTML="⚠️ Code.gs di Apps Script belum versi terbaru"+(d.versi?" (sekarang: "+esc(d.versi)+")":"")+". Tempel Code.gs terbaru, Save, lalu Deploy → Manage deployments → ✏️ Edit → Version: <b>New version</b> → Deploy.";return}
+  if(!d.versi||d.versi<"2026.10.19-wa"){o.className="er";o.innerHTML="⚠️ Code.gs di Apps Script belum versi terbaru"+(d.versi?" (sekarang: "+esc(d.versi)+")":"")+". Tempel Code.gs terbaru, Save, lalu Deploy → Manage deployments → ✏️ Edit → Version: <b>New version</b> → Deploy.";return}
   o.className="ok";o.textContent="✓ Koneksi OK. Code.gs versi "+d.versi+". Upload ke Drive siap dipakai."};
 
 /* unggah media langsung ke Google Drive */
